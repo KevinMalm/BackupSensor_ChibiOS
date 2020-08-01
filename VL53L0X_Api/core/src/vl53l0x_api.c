@@ -1,5 +1,5 @@
 /*******************************************************************************
- Copyright © 2016, STMicroelectronics International N.V.
+ Copyright ï¿½ 2016, STMicroelectronics International N.V.
  All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
@@ -32,7 +32,6 @@
 #include "vl53l0x_api_core.h"
 #include "vl53l0x_api_calibration.h"
 #include "vl53l0x_api_strings.h"
-
 #ifndef __KERNEL__
 #include <stdlib.h>
 #endif
@@ -371,6 +370,8 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 	int i;
 	uint8_t StopVariable;
 
+
+
 	LOG_FUNCTION_START("");
 
 	/* by default the I2C is running at 1V8 if you want to change it you
@@ -392,6 +393,8 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 	if (Status == VL53L0X_ERROR_NONE)
 		Status = VL53L0X_apply_offset_adjustment(Dev);
 #endif
+
+
 
 	/* Default value is 1000 for Linearity Corrective Gain */
 	PALDevDataSet(Dev, LinearityCorrectiveGain, 1000);
@@ -417,6 +420,12 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 		PALDevDataSet(Dev, CurrentParameters, CurrentParameters);
 	}
 
+	blink(1,1,1);
+    blink(1,0,0);
+	check_error_vl53(Status);
+	blink(1,0,0);
+    blink(1,1,1);
+
 	/* Sigma estimator variable */
 	PALDevDataSet(Dev, SigmaEstRefArray, 100);
 	PALDevDataSet(Dev, SigmaEstEffPulseWidth, 900);
@@ -434,6 +443,12 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 	Status |= VL53L0X_WrByte(Dev, 0x00, 0x01);
 	Status |= VL53L0X_WrByte(Dev, 0xFF, 0x00);
 	Status |= VL53L0X_WrByte(Dev, 0x80, 0x00);
+
+	blink(1,1,1);
+    blink(1,0,0);
+	check_error_vl53(Status);
+	blink(1,0,0);
+    blink(1,1,1);
 
 	/* Enable all check */
 	for (i = 0; i < VL53L0X_CHECKENABLE_NUMBER_OF_CHECKS; i++) {
@@ -467,13 +482,14 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 			VL53L0X_CHECKENABLE_SIGMA_FINAL_RANGE,
 				(FixPoint1616_t)(18 * 65536));
 	}
+
 	if (Status == VL53L0X_ERROR_NONE) {
 		Status = VL53L0X_SetLimitCheckValue(Dev,
 			VL53L0X_CHECKENABLE_SIGNAL_RATE_FINAL_RANGE,
 				(FixPoint1616_t)(25 * 65536 / 100));
 				/* 0.25 * 65536 */
 	}
-
+ 
 	if (Status == VL53L0X_ERROR_NONE) {
 		Status = VL53L0X_SetLimitCheckValue(Dev,
 			VL53L0X_CHECKENABLE_SIGNAL_REF_CLIP,
@@ -500,8 +516,12 @@ VL53L0X_Error VL53L0X_DataInit(VL53L0X_DEV Dev)
 	if (Status == VL53L0X_ERROR_NONE)
 		VL53L0X_SETDEVICESPECIFICPARAMETER(Dev, RefSpadsInitialised, 0);
 
-
 	LOG_FUNCTION_END(Status);
+	blink(1,1,1);
+    blink(1,0,0);
+	check_error_vl53(Status);
+	blink(1,0,0);
+    blink(1,1,1);
 	return Status;
 }
 

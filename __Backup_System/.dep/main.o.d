@@ -36,13 +36,10 @@ build/obj/main.o: main.c ..//os/kernel/include/ch.h chconf.h \
  ..//os/hal/include/uart.h ..//os/hal/include/usb.h \
  ..//os/hal/include/mmc_spi.h ..//os/hal/include/serial_usb.h \
  ..//test/test.h ..//os/various/shell.h ..//os/various/chprintf.h \
- ..//VL53L0X_Api/core/inc/vl53l0x_api.h \
- ..//VL53L0X_Api/core/inc/vl53l0x_api_strings.h \
+ src/I2C_interface.h ..//VL53L0X_Api/platform/inc/vl53l0x_platform.h \
  ..//VL53L0X_Api/core/inc/vl53l0x_def.h \
  ..//VL53L0X_Api/core/inc/vl53l0x_device.h \
  ..//VL53L0X_Api/platform/inc/vl53l0x_types.h \
- ..//VL53L0X_Api/platform/inc/vl53l0x_platform.h \
- ..//VL53L0X_Api/core/inc/vl53l0x_def.h \
  ..//VL53L0X_Api/platform/inc/vl53l0x_platform_log.h \
  /usr/local/Cellar/gcc-arm-none-eabi/20180627/arm-none-eabi/include/stdio.h \
  /usr/local/Cellar/gcc-arm-none-eabi/20180627/arm-none-eabi/include/_ansi.h \
@@ -73,7 +70,10 @@ build/obj/main.o: main.c ..//os/kernel/include/ch.h chconf.h \
  /usr/local/Cellar/gcc-arm-none-eabi/20180627/arm-none-eabi/include/strings.h \
  /usr/local/Cellar/gcc-arm-none-eabi/20180627/arm-none-eabi/include/sys/string.h \
  ..//VL53L0X_Api/platform/inc/vl53l0x_i2c_platform.h \
- src/vl53l0x_sensor_interface.h
+ ..//VL53L0X_Api/core/inc/vl53l0x_api.h \
+ ..//VL53L0X_Api/core/inc/vl53l0x_api_strings.h \
+ ..//VL53L0X_Api/core/inc/vl53l0x_def.h src/vl53l0x_sensor_interface.h \
+ src/error_check.h
 
 ..//os/kernel/include/ch.h:
 
@@ -213,19 +213,15 @@ mcuconf.h:
 
 ..//os/various/chprintf.h:
 
-..//VL53L0X_Api/core/inc/vl53l0x_api.h:
+src/I2C_interface.h:
 
-..//VL53L0X_Api/core/inc/vl53l0x_api_strings.h:
+..//VL53L0X_Api/platform/inc/vl53l0x_platform.h:
 
 ..//VL53L0X_Api/core/inc/vl53l0x_def.h:
 
 ..//VL53L0X_Api/core/inc/vl53l0x_device.h:
 
 ..//VL53L0X_Api/platform/inc/vl53l0x_types.h:
-
-..//VL53L0X_Api/platform/inc/vl53l0x_platform.h:
-
-..//VL53L0X_Api/core/inc/vl53l0x_def.h:
 
 ..//VL53L0X_Api/platform/inc/vl53l0x_platform_log.h:
 
@@ -287,4 +283,12 @@ mcuconf.h:
 
 ..//VL53L0X_Api/platform/inc/vl53l0x_i2c_platform.h:
 
+..//VL53L0X_Api/core/inc/vl53l0x_api.h:
+
+..//VL53L0X_Api/core/inc/vl53l0x_api_strings.h:
+
+..//VL53L0X_Api/core/inc/vl53l0x_def.h:
+
 src/vl53l0x_sensor_interface.h:
+
+src/error_check.h:
