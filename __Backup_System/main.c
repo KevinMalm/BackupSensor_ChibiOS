@@ -23,8 +23,10 @@
 #include "test.h"
 #include "shell.h"
 #include "chprintf.h"
+#include "src/I2C_interface.h"
 #include "vl53l0x_api.h"
 #include "src/vl53l0x_sensor_interface.h"
+#include "src/error_check.h"
 
 #define SHELL_WA_SIZE       THD_WA_SIZE(4096)
 
@@ -86,7 +88,7 @@ static void cmd_test(BaseSequentialStream *chp, int argc, char *argv[]) {
 #endif // EXTENDED_SHELL
 
 SENSOR_ARRAY front_array;
-SENSOR_ARRAY back_array;
+SENSOR_ARRAY rear_array;
 
 
 static void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]) {
@@ -115,11 +117,33 @@ static const ShellConfig shell_config = {
   commands
 };
 
-static WORKING_AREA(waThread1, 128);
 
-static msg_t Thread1(void *p) {
+
+/******
+ * 
+ *  | ____________________
+ *                        | (0xXXX)
+ *               -----------------
+ *  | --CLOCK-- |                 - 0x000 -> front right
+ *  | --DATA--- |                 - 0x001 -> front center
+ *              |                 - 0x010 -> front left
+ *              |                 
+ *              |                 - 0x100 -> rear right
+ *              |                 - 0x101 -> rear center
+ *              |                 - 0x110 -> rear left
+ *              |                 
+ *              |                 - 0x111 -> {all}                
+ *               -----------------
+ *
+ ******/
+
+
+static WORKING_AREA(waThread1, 128);
+static WORKING_AREA(waThread2, 128);
+
+static msg_t front_thread(void *p) {
   (void)p;
-  chRegSetThreadName("blinker");
+  chRegSetThreadName("front_");
   while (TRUE) {
     palClearPad(ONBOARD_LED_PORT, ONBOARD_LED_PAD);
     chThdSleepMilliseconds(2000);
@@ -128,42 +152,58 @@ static msg_t Thread1(void *p) {
   }
   return 0;
 }
+static msg_t rear_thread(void *p) {
+  (void)p;
+  VL53L0X_Error Status = VL53L0X_ERROR_NONE;
+  VL53L0X_RangingMeasurementData_t  RangingMeasurementData;
+  chRegSetThreadName("rear_");
+  while (TRUE) {
+    Status = VL53L0X_GetMeasurementDataReady(&front_array.center.device,
+            		&RangingMeasurementData);
+    if(RangingMeasurementData.RangeMilliMeter < 15){
+          palClearPad(ONBOARD_LED_PORT, ONBOARD_LED_PAD);
+    } else {
+          palSetPad(ONBOARD_LED_PORT, ONBOARD_LED_PAD);
+    }
+    chThdSleepMilliseconds(20000);
+  }
+  return 0;
+}
 
-/*
- * Application entry point.
- */
-
+/* Application entry point */
 int main(void) {
+
   halInit();
   chSysInit();
-  setup_sensors(front_array, back_array);
 
-  /*
-   * Serial port initialization.
-   */
+  /* Serial port initialization */
   sdStart(&SD1, NULL); 
   chprintf((BaseSequentialStream *)&SD1, "Main (SD1 started)\r\n");
 
-  /*
-   * Shell initialization.
-   */
+  /* Shell initialization */
   shellInit();
   shellCreate(&shell_config, SHELL_WA_SIZE, NORMALPRIO + 1);
 
-  /*
-   * Set mode of onboard LED
-   */
-  palSetPadMode(ONBOARD_LED_PORT, ONBOARD_LED_PAD, PAL_MODE_OUTPUT);
+  /* Sensor and I2C initialization */
+  I2C_setup();
+  check_error_vl53(setup_sensors(front_array, rear_array));
+  chThdWait(chThdSelf());
 
-  /*
-   * Creates the blinker thread.
-   */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+  check_error_vl53(start_measurements(front_array));
+  check_error_vl53(start_measurements(rear_array));
+  blink(10, 1, 1);
+  check_error(VL53L0X_StartMeasurement(&front_array.center.device));
+  blink(10, 1, 1);
+
+  chThdCreateStatic(front_thread, sizeof(front_thread), NORMALPRIO, Threadi2c, NULL);
 
   /*
    * Events servicing loop.
    */
-  chThdWait(chThdSelf());
-
+  while(1) {
+    // never exit 
+  }
   return 0;
 }
+
+
