@@ -34,6 +34,7 @@ static VL53L0X_Error setupSensors(SENSOR_ARRAY, SENSOR_ARRAY);
 static VL53L0X_Error setup_sensor_array(SENSOR_ARRAY);
 static VL53L0X_Error individual_sensor(SENSOR);
 static VL53L0X_Error setup_device_address(SENSOR_ARRAY);
+uint16_t read_measurement(SENSOR dev);
 
 void setup_multiplexer_board(void);
 static short set_mutiplexer(short);
@@ -93,13 +94,21 @@ static VL53L0X_Error setup_sensor_array(SENSOR_ARRAY array) {
     return error_code;
 }
 
+static VL53L0X_Error start_measurements(SENSOR_ARRAY array) {
+    VL53L0X_Error error_code = VL53L0X_ERROR_NONE;  
+    error_code |= VL53L0X_StartMeasurement(&array.right.device);
+        if(error_code) { return error_code; }
+    error_code |= VL53L0X_StartMeasurement(&array.center.device);
+        if(error_code) { return error_code; }
+    error_code |= VL53L0X_StartMeasurement(&array.left.device);
+        return error_code;
+}
 static VL53L0X_Error individual_sensor(SENSOR lcl_sensor){
     VL53L0X_Error error_code = VL53L0X_ERROR_NONE;
     uint8_t VHV_settings = 0;
     uint8_t phaseCal = 0;
     uint32_t ref_SpadCount = 0;
     uint8_t aperture_Spads = 0;
-
 
     error_code = VL53L0X_DataInit(&lcl_sensor.device);
         if(error_code) { return error_code; }
@@ -145,8 +154,15 @@ static VL53L0X_Error individual_sensor(SENSOR lcl_sensor){
     return error_code;
 }
 
+uint16_t read_measurement(SENSOR dev) {
+    VL53L0X_RangingMeasurementData_t  RangingMeasurementData;
+    VL53L0X_Error Status = VL53L0X_ERROR_NONE;
+    Status = VL53L0X_GetMeasurementDataReady(&dev, &RangingMeasurementData);
+    return RangingMeasurementData.RangeMilliMeter;
+}
+
 void setup_multiplexer_board(){
-// ------------------------------------
+
     palSetPadMode(A_PORT, A_PAD, PAL_MODE_OUTPUT);
     palSetPadMode(B_PORT, B_PAD, PAL_MODE_OUTPUT);
     palSetPadMode(C_PORT, C_PAD, PAL_MODE_OUTPUT);
@@ -162,18 +178,22 @@ void setup_multiplexer_board(){
 
 
 static short set_mutiplexer(short address) {
-    if(address == -1){
+
+    if(address == -1) {
         palClearPad(A_PORT, A_PAD);
         palClearPad(B_PORT, B_PAD);
         palClearPad(C_PORT, C_PAD);
         palClearPad(D_PORT, D_PAD); 
     }
+// ------------------------------------
     short a = address & (0x1);
     short b = address & (0x2);
     short c = address & (0x3);
+// ------------------------------------
     if(a) { palSetPad(A_PORT, A_PAD); } else { palClearPad(A_PORT, A_PAD); }
     if(b) { palSetPad(B_PORT, B_PAD); } else { palClearPad(B_PORT, B_PAD); }
     if(c) { palSetPad(C_PORT, C_PAD); } else { palClearPad(C_PORT, C_PAD); }
     if(d) { palSetPad(D_PORT, D_PAD); } else { palClearPad(D_PORT, D_PAD); }
+// ------------------------------------
     return address;
 }

@@ -88,7 +88,7 @@ static void cmd_test(BaseSequentialStream *chp, int argc, char *argv[]) {
 #endif // EXTENDED_SHELL
 
 SENSOR_ARRAY front_array;
-SENSOR_ARRAY back_array;
+SENSOR_ARRAY rear_array;
 
 
 static void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]) {
@@ -131,6 +131,8 @@ static const ShellConfig shell_config = {
  *              |                 - 0x100 -> rear right
  *              |                 - 0x101 -> rear center
  *              |                 - 0x110 -> rear left
+ *              |                 
+ *              |                 - 0x111 -> {all}                
  *               -----------------
  *
  ******/
@@ -182,20 +184,18 @@ int main(void) {
   shellInit();
   shellCreate(&shell_config, SHELL_WA_SIZE, NORMALPRIO + 1);
 
-
-
+  /* Sensor and I2C initialization */
   I2C_setup();
-
-  check_error_vl53(setup_sensors(front_array, back_array));
-
+  check_error_vl53(setup_sensors(front_array, rear_array));
   chThdWait(chThdSelf());
-  return 0;
 
-  check_error_vl53(individual_sensor(front_array.center));
+  check_error_vl53(start_measurements(front_array));
+  check_error_vl53(start_measurements(rear_array));
   blink(10, 1, 1);
   check_error(VL53L0X_StartMeasurement(&front_array.center.device));
   blink(10, 1, 1);
-  //chThdCreateStatic(waThread2, sizeof(waThread2), NORMALPRIO, Threadi2c, NULL);
+
+  chThdCreateStatic(front_thread, sizeof(front_thread), NORMALPRIO, Threadi2c, NULL);
 
   /*
    * Events servicing loop.
