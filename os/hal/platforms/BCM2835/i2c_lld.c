@@ -38,8 +38,8 @@
 /*===========================================================================*/
 /* Driver exported variables.                                                */
 /*===========================================================================*/
-
 I2CDriver I2C0;
+I2CDriver I2C1;
 
 /*===========================================================================*/
 /* Driver local variables.                                                   */
@@ -140,6 +140,9 @@ void i2c_lld_serve_interrupt(I2CDriver *i2cp) {
 void i2c_lld_init(void) {
   I2C0.device = BSC0_ADDR;
   i2cObjectInit(&I2C0);
+
+  I2C1.device = BSC1_ADDR;
+  i2cObjectInit(&I2C1);
 }
 
 /**
@@ -153,6 +156,10 @@ void i2c_lld_start(I2CDriver *i2cp) {
   /* Set up GPIO pins for I2C */
   bcm2835_gpio_fnsel(GPIO0_PAD, GPFN_ALT0);
   bcm2835_gpio_fnsel(GPIO1_PAD, GPFN_ALT0);
+
+  /* Set up GPIO pins for I2C on Rev. 2 boards*/
+  bcm2835_gpio_fnsel(GPIO2_PAD, GPFN_ALT0);
+  bcm2835_gpio_fnsel(GPIO3_PAD, GPFN_ALT0);
 
   uint32_t speed = i2cp->config->ic_speed;
   if (speed != 0 && speed != 100000)
@@ -214,7 +221,7 @@ msg_t i2c_lld_master_transmit_timeout(I2CDriver *i2cp, i2caddr_t addr,
   device->slaveAddress = addr;
   device->dataLength = txbytes;
   device->status = CLEAR_STATUS;
-
+  
   /* Enable Interrupts and start transfer.*/
   device->control |= (BSC_INTT | BSC_INTD | START_WRITE);
 

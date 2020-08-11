@@ -23,8 +23,10 @@
 #include "test.h"
 #include "shell.h"
 #include "chprintf.h"
+#include "src/I2C_interface.h"
 #include "vl53l0x_api.h"
 #include "src/vl53l0x_sensor_interface.h"
+#include "src/error_check.h"
 
 #define SHELL_WA_SIZE       THD_WA_SIZE(4096)
 
@@ -85,9 +87,6 @@ static void cmd_test(BaseSequentialStream *chp, int argc, char *argv[]) {
 
 #endif // EXTENDED_SHELL
 
-SENSOR_ARRAY front_array;
-SENSOR_ARRAY back_array;
-
 
 static void cmd_reboot(BaseSequentialStream *chp, int argc, char *argv[]) {
   UNUSED(argv);
@@ -115,28 +114,31 @@ static const ShellConfig shell_config = {
   commands
 };
 
-static WORKING_AREA(waThread1, 128);
 
-static msg_t Thread1(void *p) {
-  (void)p;
-  chRegSetThreadName("blinker");
-  while (TRUE) {
-    palClearPad(ONBOARD_LED_PORT, ONBOARD_LED_PAD);
-    chThdSleepMilliseconds(2000);
-    palSetPad(ONBOARD_LED_PORT, ONBOARD_LED_PAD);
-    chThdSleepMilliseconds(20000);
-  }
-  return 0;
-}
+/********** THREADS VARIABLES **********/
+static WORKING_AREA(waThread_front_driver, 128);
+static WORKING_AREA(waThread_front_passenger, 128);
+static WORKING_AREA(waThread_rear_driver, 128);
+static WORKING_AREA(waThread_rear_passenger, 128);
 
-/*
- * Application entry point.
- */
+static WORKING_AREA(waThread_display, 128);
+
+
+static msg_t Thread_Sensor(void *);
+static msg_t Thread_Diplsay(void *);
+
+
+
+int16_t min(int16_t, int16_t);
+
+/********** VARIABLES **********/
+SENSOR_SYSTEM system;
+static int refresh_rate_ms = 200;
+VL53L0X_Error system_failure_status = VL53L0X_ERROR_NONE;
 
 int main(void) {
   halInit();
   chSysInit();
-  setup_sensors(front_array, back_array);
 
   /*
    * Serial port initialization.
@@ -149,21 +151,95 @@ int main(void) {
    */
   shellInit();
   shellCreate(&shell_config, SHELL_WA_SIZE, NORMALPRIO + 1);
+  
 
   /*
-   * Set mode of onboard LED
-   */
-  palSetPadMode(ONBOARD_LED_PORT, ONBOARD_LED_PAD, PAL_MODE_OUTPUT);
+    Setup Sensor Structs
+  */
+  MUX front_mux;
+  front_mux._pin_a.PAD = GPIO16_PAD;
+  front_mux._pin_a.PORT = * GPIO16_PORT;
+  front_mux._pin_a.PAD = GPIO17_PAD;
+  front_mux._pin_a.PORT = * GPIO17_PORT;
+
+  MUX rear_mux;
+  front_mux._pin_a.PAD = GPIO14_PAD;
+  front_mux._pin_a.PORT = * GPIO14_PORT;
+  front_mux._pin_a.PAD = GPIO15_PAD;
+  front_mux._pin_a.PORT = * GPIO15_PORT;
+
+
+  system.front_driver.mux = front_mux; // Assign Mux Struct
+  system.front_passenger.mux = front_mux; // Assign Mux Struct
+  system.front_driver.refresh_rate = 1; // Set Default Refresh Rate Factor to 1
+  system.front_passenger.refresh_rate = 1; 
+
+  system.rear_driver.mux = front_mux; 
+  system.rear_passenger.mux = front_mux; 
+  system.rear_driver.refresh_rate = 1; 
+  system.rear_passenger.refresh_rate = 1; 
+
+  setup_sensors(system);
 
   /*
-   * Creates the blinker thread.
-   */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+    Setup Threads
+  */
+  void * front_driver_sensor_args = &system.front_driver;
+  void * front_passenger_sensor_args = &system.front_passenger;
 
-  /*
-   * Events servicing loop.
-   */
+  void * rear_driver_sensor_args = &system.rear_driver;
+  void * rear_passenger_sensor_args = &system.rear_passenger;
+
+  void * display_sensor_args = &system;
+
+  chThdCreateStatic(waThread_front_driver, sizeof(waThread_front_driver), NORMALPRIO, Thread_Sensor, front_driver_sensor_args);
+  chThdCreateStatic(waThread_front_passenger, sizeof(waThread_front_passenger), NORMALPRIO, Thread_Sensor, front_passenger_sensor_args);
+
+  chThdCreateStatic(waThread_rear_driver, sizeof(waThread_rear_driver), NORMALPRIO, Thread_Sensor, rear_driver_sensor_args);
+  chThdCreateStatic(waThread_rear_passenger, sizeof(waThread_rear_passenger), NORMALPRIO, Thread_Sensor, rear_driver_sensor_args);
+
+  chThdCreateStatic(waThread_display, sizeof(waThread_display), NORMALPRIO, Thread_Diplsay, display_sensor_args);
+
+
+
   chThdWait(chThdSelf());
 
   return 0;
+}
+
+
+static msg_t Thread_Sensor(void *p) {
+  (void)p;
+  SENSOR_QUADRANT sensor_quad = *(SENSOR_QUADRANT *)p;
+  chRegSetThreadName("sensor_read_in");
+  while(1){
+    // Read Distances
+    system_failure_status = poll_device_values(sensor_quad);
+    // Update Refresh Rate
+    sensor_quad.refresh_rate = update_refresh_rate(min(sensor_quad.side.distance_rating.RangeMilliMeter, sensor_quad.center.distance_rating.RangeMilliMeter));
+    int sleep_ms = (int)(refresh_rate_ms * sensor_quad.refresh_rate);
+    chThdSleepMilliseconds(sleep_ms);
+  }
+  return 0;
+}
+
+static msg_t Thread_Diplsay(void *p) {
+  SENSOR_SYSTEM sensory_system = *(SENSOR_SYSTEM *)p;
+  chRegSetThreadName("display_update");
+  while(1){
+    /*
+    ***********************
+      DISPLAY UPDATE CODE 
+    ***********************
+    */
+    chThdSleepMilliseconds(refresh_rate_ms * 2);
+  }
+  return 0;
+}
+
+
+int16_t min(int16_t a, int16_t b){
+  if(a > b)
+    return b;
+  return a;
 }

@@ -1,4 +1,4 @@
-ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 1
+ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccemoaS8.s 			page 1
 
 
    1              	# 1 "..//os/ports/GCC/ARM/chcoreasm.s"
@@ -58,7 +58,7 @@ ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 1
   51              	 * the system because those are inlined in ARM code.
   52              	 */
   53              	#ifdef THUMB_PRESENT
-ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 2
+ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccemoaS8.s 			page 2
 
 
   54              	.balign 16
@@ -118,7 +118,7 @@ ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 1
  108              	#endif
  109              	.code 32
  110              	.global _port_switch_arm
-ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 3
+ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccemoaS8.s 			page 3
 
 
  111              	_port_switch_arm:
@@ -178,7 +178,7 @@ ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 1
  165              	.globl _port_irq_common
  166              	_port_irq_common:
  167              	        bl      chSchIsPreemptionRequired
-ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 4
+ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccemoaS8.s 			page 4
 
 
  168              	        mov     lr, pc
@@ -238,7 +238,7 @@ ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 1
  222 0058 0F50BDE8 	        ldmfd   sp!, {r0-r3, r12, lr}
  223 005c 92F021E3 	        msr     CPSR_c, #MODE_IRQ | I_BIT
  224 0060 04F05EE2 	        subs    pc, lr, #4
-ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 5
+ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccemoaS8.s 			page 5
 
 
  225              	
@@ -264,7 +264,7 @@ ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 1
  243 0078 0FE0A0E1 	        mov     lr, pc
  244 007c 14FF2FE1 	        bx      r4
  245 0080 FEFFFFEB 	        bl      chThdExit
-ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccqbO2tp.s 			page 6
+ARM GAS  /var/folders/3j/4xdnk5197cv_b7cw3n33qk7r0000gn/T//ccemoaS8.s 			page 6
 
 
 DEFINED SYMBOLS
