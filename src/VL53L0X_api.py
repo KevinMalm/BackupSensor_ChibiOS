@@ -99,7 +99,7 @@ class VL53L0X_Sensor:
     def setDeviceAddress(self, new_address):
         new_address &= 0x7F;
         data = 0
-        data = self.i2c_bus.write_byte_data(self.address, new_address)
+        data = self.i2c_bus.write_byte_data(self.address, 0x8a, new_address)
         self.address = new_address
         return 
     def setMode(self, mode, precision):
