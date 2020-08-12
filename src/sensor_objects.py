@@ -59,7 +59,9 @@ class SENSOR_SYSTEM:
 
     def __init__(self):
         self.i2c_bus_0 = smbus.SMBus(0)
+        #print('Opening Bus 0: ' + smbus.open(self.i2c_bus_0))
         self.i2c_bus_1 = smbus.SMBus(1)
+        #print('Opening Bus 1: ' + smbus.open(self.i2c_bus_1))
 
         _front_mux = MUX([GPIO_PIN(15), GPIO_PIN(16), ])
         _rear_mux = MUX([GPIO_PIN(15), GPIO_PIN(16), ])

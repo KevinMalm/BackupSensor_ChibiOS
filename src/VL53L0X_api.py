@@ -3,13 +3,13 @@ import smbus
 mode_CONTINUOUS = "CONTINUOUS"
 mode_SINGLE = "SINGLE"
 precision_HIGH = "HIGH"
-precision_HIGH = "LOW"
+precision_LOW = "LOW"
 VL53L0x_MAX_LOOP = 200
 
 class VL53L0X_Sensor:
     address = 0x52
     i2c_bus = None
-    mode = 'Continous'
+    mode =  mode_CONTINUOUS
     percision = 'HIGH'
 
     lastest_result = {}
@@ -20,7 +20,7 @@ class VL53L0X_Sensor:
 
         self.DataInit()
         self.setDeviceAddress(updated_address)
-
+        self.setMode(mode_CONTINUOUS, precision_LOW)
     
     def DataInit(self):
         if(self.i2c_bus == None):

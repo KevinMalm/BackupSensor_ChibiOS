@@ -5,8 +5,8 @@ from sensor_objects import SENSOR_QUADRANT, SENSOR_SYSTEM
 
 async def read_sensor_data(sensor_quad: SENSOR_QUADRANT):
     #read data
-    print('Reading from I2C: ' + repr(sensor_quad.side.i2c_id))
-    print('Reading from I2C: ' + repr(sensor_quad.center.i2c_id))
+    print('Reading from I2C: ' + repr(sensor_quad.side.getDistance()))
+    print('Reading from I2C: ' + repr(sensor_quad.center.getDistance()))
     sensor_quad.update_sleep_factor()
     await asyncio.sleep(sensor_quad.sleep_ms * sensor_quad.sleep_factor)
 
