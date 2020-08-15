@@ -61,6 +61,8 @@ class VL53L0X_Sensor:
         self.setMode(mode_CONTINUOUS, precision_LOW)
     
     def DataInit(self):
+        self._mux.set_MUX(self._id)
+
         if(self.i2c_bus == None):
             return None
         data = 0
@@ -80,6 +82,8 @@ class VL53L0X_Sensor:
         return
     
     def start(self):
+        self._mux.set_MUX(self._id)
+
         data = 0
         data = self.i2c_bus.write_byte_data(self.address, 0x80, 0x01)
         data = self.i2c_bus.write_byte_data(self.address, 0xFF, 0x01)
@@ -105,6 +109,8 @@ class VL53L0X_Sensor:
         return
 
     def stop(self):
+        self._mux.set_MUX(self._id)
+
         data = self.i2c_bus.write_byte_data(self.address, 0x00, 0x00)
         data = self.i2c_bus.write_byte_data(self.address, 0xFF, 0x01)
         data = self.i2c_bus.write_byte_data(self.address, 0x00, 0x00)
@@ -123,6 +129,9 @@ class VL53L0X_Sensor:
     def getDistance(self):
         distance = -1
         result = {}
+
+        self._mux.set_MUX(self._id)
+
         data = self.read_data(0x14, 12)
 
         result['ambientCount'] = ((data[6] & 0xFF) << 8) | ((data[7] & 0xFF))
@@ -136,12 +145,16 @@ class VL53L0X_Sensor:
         return result['distance']
 
     def setDeviceAddress(self, new_address):
+        self._mux.set_MUX(self._id)
+
         new_address &= 0x7F;
         data = 0
         data = self.i2c_bus.write_byte_data(self.address, 0x8a, new_address)
         self.address = new_address
         return 
     def setMode(self, mode, precision):
+        self._mux.set_MUX(self._id)
+
         self.sensor_mode = mode
         if(precision == precision_HIGH):
             data = self.i2c_bus.write_byte_data(self.address, 0x09, 0x0)
