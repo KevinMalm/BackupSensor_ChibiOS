@@ -19,7 +19,7 @@ class RadarStripes:
     canvas_img = None   
     lcl_canvas = None
 
-    def __init__(self, canvas, x_offst = 0, y_offset = 0, base_path = 'Graphics/Radar_Stripes/stripe_'):
+    def __init__(self, canvas, x_offst = 0, y_offset = 0, base_path = 'Graphics/Radar_Stripes/stripe_', n = 6):
         self.path = base_path
         self.offset_x = x_offst
         self.offset_y = y_offset
@@ -27,7 +27,7 @@ class RadarStripes:
         self.lcl_canvas = canvas
         #build images
         i = self.state
-        while(i <= self.n):
+        while(i <= n):
             lcl_path = self.path + repr(i) + ".png"
             img_n = ImageTk.PhotoImage(Image.open(lcl_path).resize((int(244*1.2), int(250*1.2)), Image.ANTIALIAS)) #244 x 250
             self.imgs.append(img_n)
@@ -42,10 +42,11 @@ class RadarStripes:
         self.current_img = self.imgs[self.state]
         self.lcl_canvas.itemconfigure(self.canvas_img, image = self.current_img)
     def set_state(self, s):
-        self.set_state = s
-        if(self.set_state >= len(self.imgs)):
-            self.set_state = 0
-        self.current_img = self.imgs[self.state]
+        self.state = s
+        if(self.state >= len(self.imgs)):
+            self.state = 0
+        #self.current_img = self.imgs[self.state]
+        self.current_img = self.current_img.resize(int(s/200), int(s/200), Image.ANTIALIAS)
         self.lcl_canvas.itemconfigure(self.canvas_img, image = self.current_img)      
 
 
@@ -89,11 +90,9 @@ class Application:
         canvas.pack()
 
         bg = self.add_bg_image(canvas, self.bg_path, self.WIDTH, self.HEIGHT)
-        self.images['front_driver_radar'] = RadarStripes(canvas, x_offst=self.WIDTH / 2, y_offset=237)
-        self.images['front_driver_radar_red'] = RadarStripes(canvas, x_offst=self.WIDTH / 2, y_offset=237, base_path='Graphics/Radar_Stripes/red_stripe_')
-        #self.images['front_passenger_radar'] = RadarStripes(canvas, x_offst=272, y_offset=237)
+        self.images['front_driver_radar'] = RadarStripes(canvas, x_offst=self.WIDTH / 2, y_offset=237)  #152, 272
+        self.images['front_driver_radar_red'] = RadarStripes(canvas, x_offst=152, y_offset=237, base_path='Graphics/Radar_Stripes/Red_Radar_Series/Sensor_Hit_', n = 9)
         self.images['rear_driver_radar'] = RadarStripes(canvas, x_offst=self.WIDTH / 2, y_offset=653)
-        #self.images['rear_passenger_radar'] = RadarStripes(canvas, x_offst=272, y_offset=653)
         self.images['car_img'] = self.add_image(canvas, self.car_path, 290, 536)
 
     def process(self, v):
@@ -118,14 +117,11 @@ class Application:
         try:
             msg = self.queue.get()
             self.images['front_driver_radar'].increment()
-            #self.images['front_passenger_radar'].increment()
             self.images['rear_driver_radar'].increment()
-            #self.images['rear_passenger_radar'].increment()
             self.process(msg)
             print(msg)
         except queue.Empty:
-            # just on general principles, although we don't
-            # expect this branch to be taken in this case
+
             pass
 
     def run_main_loop(self):

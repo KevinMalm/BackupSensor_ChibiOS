@@ -1,5 +1,39 @@
 import smbus
 
+class GPIO_PIN:
+    _PIN_id: int
+    _PIN: LED
+    def __init__(self, pin):
+        self._PIN_id = pin
+        self._PIN = LED(pin)
+
+    def set_state(self, v):
+        if(v):
+            self._PIN.on()
+        else:
+            self._PIN.off()
+        return
+class MUX:
+    GPIO_pins = []
+    
+    def __init__(self, pins: []):
+        self.GPIO_pins = []
+        for p in pins:
+            self.GPIO_pins.append(GPIO_PIN(p))
+
+    def set_MUX(self, index: int):
+        values = []
+        values.add((index >> 0) & 0x1)
+        values.add((index >> 1) & 0x1)
+        values.add((index >> 2) & 0x1)
+        i = 0
+        for pin in self.GPIO_pins:
+            pin.set_state(values[i] == 1)
+            i+=1
+
+        return 
+
+
 mode_CONTINUOUS = "CONTINUOUS"
 mode_SINGLE = "SINGLE"
 precision_HIGH = "HIGH"
@@ -7,6 +41,8 @@ precision_LOW = "LOW"
 VL53L0x_MAX_LOOP = 200
 
 class VL53L0X_Sensor:
+    _id =0
+    _mux:MUX
     address = 0x52
     i2c_bus = None
     mode =  mode_CONTINUOUS
@@ -14,7 +50,9 @@ class VL53L0X_Sensor:
 
     lastest_result = {}
 
-    def __init__(self, i2c_bus, address = 0x52, updated_address = 0x52):
+    def __init__(self, i2c_bus, sensor_id, mux, address = 0x52, updated_address = 0x52):
+        self._id = sensor_id
+        self._mux = mux 
         self.address = address
         self.i2c_bus = i2c_bus
 
@@ -51,7 +89,7 @@ class VL53L0X_Sensor:
         data = self.i2c_bus.write_byte_data(self.address, 0xFF, 0x00)
         data = self.i2c_bus.write_byte_data(self.address, 0x80, 0x00)
 
-        if(self.mode == mode_CONTINUOUS):
+        if(self.mode == mode_SINGLE):
             data = self.i2c_bus.write_byte_data(self.address, 0x00, 0x01)
             byte = 0x01
             loopNB = 0
@@ -91,7 +129,8 @@ class VL53L0X_Sensor:
         result['signalCount']  = ((data[8] & 0xFF) << 8) | ((data[9] & 0xFF))
         result['distance']     = ((data[10] & 0xFF) << 8) | ((data[11] & 0xFF))
         result['status']       = ((data[0] & 0x78) >> 3)
-
+        if(result['distance'] <= 20):
+            result['distance'] = None
         self.lastest_result = result
 
         return result['distance']
