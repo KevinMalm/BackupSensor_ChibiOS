@@ -5,6 +5,9 @@ import math
 
 SCALE_FACTOR = 0.339
 
+MAX_MM = 8000
+MIN_MM = 200
+MAX_DISPLAY_MM = 600
 
 FILE_HEADER = ''
 
@@ -12,6 +15,7 @@ class RadarStripes:
     blank_path = FILE_HEADER + 'Graphics/Radar_Stripes/blank.png'
     offset_x, offset_y = 200, 200
     scale_x, scale_y = int(810 * SCALE_FACTOR), int(829 * SCALE_FACTOR) #244 250
+    pos_x, pos_y = 0,0
     state = 0
     path = ''
     blank_img = None
@@ -39,6 +43,7 @@ class RadarStripes:
             self.imgs.append(img_n)
             i += 1
         self.current_img = self.imgs[self.state]
+
         self.canvas_img = self.lcl_canvas.create_image(self.offset_x, self.offset_y, anchor = CENTER, image = self.current_img)
         #build blank image 
         self.blank_img = ImageTk.PhotoImage(Image.open(self.blank_path).resize((self.scale_x, self.scale_y), Image.ANTIALIAS)) #244 x 250
@@ -80,6 +85,7 @@ class RadarBlob:
     x_factor, y_factor = 1, 1
     sensor_angle = 0
     x_pos, y_pos = 0, 0
+    states = 8
     size_x, size_y = int(400 * SCALE_FACTOR), int(112 * SCALE_FACTOR)
     canvas_img = None
     blank_img = None
@@ -95,12 +101,12 @@ class RadarBlob:
         self.sensor_angle = math.radians(_sensor_angle)
  
         self.size_x, self.size_y = int(_size_x * SCALE_FACTOR), int(_size_y * SCALE_FACTOR)
-        self.x_pos = _x - (self.size_x)
-        self.y_pos = _y - (self.size_y / 2)
+        self.x_pos = self.origin['x'] + _x - (self.size_x)
+        self.y_pos = self.origin['y'] + _y - (self.size_y / 2)
         #build Images
-        self.img = ImageTk.PhotoImage(Image.open(self.img_path).resize((self.size_x, self.size_y), Image.ANTIALIAS))    
+        self.img = ImageTk.PhotoImage(Image.open(self.img_path).resize((self.size_x, self.size_y), Image.ANTIALIAS)) 
         self.blank_img = ImageTk.PhotoImage(Image.open(self.blank_path).resize((self.size_x, self.size_y), Image.ANTIALIAS))
-        self.canvas_img = self.lcl_canvas.create_image(self.origin['x'] + (self.x_pos), self.origin['y'] + (self.y_pos), anchor = CENTER, image = self.img)
+        self.canvas_img = self.lcl_canvas.create_image(self.x_pos, self.y_pos, anchor = CENTER, image = self.img)
 
     def set_disabled(self, v: bool):
         if(self.disabled == v):
@@ -112,12 +118,17 @@ class RadarBlob:
             self.lcl_canvas.itemconfigure(self.canvas_img, image = self.img)
     def animate(self):
         return
+
+    #gets value of mm
     def update_distance(self, v):
+        #v = (v - MIN_MM) / (MAX_MM - MIN_MM)
         x = math.floor(math.sin(self.sensor_angle) * v * self.x_factor)
         y = math.floor(math.cos(self.sensor_angle) * v * self.y_factor)
-        x_delta  = (self.origin['x'] + x) - (self.size_y / 2)
-        y_delta = (self.origin['y'] + y)  - (self.size_y / 2)
-        self.lcl_canvas.moveto(self.canvas_img, x_delta, y_delta)
+        x_delta  = (self.origin['x'] + x) - (self.size_x / 2) - self.x_pos
+        y_delta = (self.origin['y'] + y)  - (self.size_x / 2) - self.y_pos
+        self.lcl_canvas.move(self.canvas_img, x_delta, y_delta)
+        self.x_pos += x_delta
+        self.y_pos += y_delta
         return 
 
 '''
@@ -296,11 +307,9 @@ class Application:
             If Close enough for each side: corresponding pinged block is enabled 
             Front Block is Disabled 
     '''
-    max_mm = 8000
-    min_mm = 200
-    max_display_mm = 600
+
     def mm_to_pixels(self, v):
-        f = (v - self.min_mm) / (self.max_mm - self.min_mm)
+        f = (v - MIN_MM) / (MAX_MM - MIN_MM)
 
         return int((f * 13.75 + 40) /15) * 15;
     def compute_point_on_screen(self, origin, distance):
@@ -352,9 +361,7 @@ class Application:
             self.images[side+'_driver_ping'].increment()
             self.images[side+'_passenger_ping'].set_disabled(False)
             self.images[side+'_passenger_ping'].increment()
-            # turn off side blocks
-            #self.images[side+'_driver_block'].set_disabled(True)
-            #self.images[side+'_passenger_block'].set_disabled(True)
+
             # turn of side blocks and update 
             if(data[side+'_point'] < self.max_display_mm):
                 self.images[side+'_block'].set_disabled(False)
@@ -364,7 +371,7 @@ class Application:
             return
 
         self.update_graphics_side(side+'_driver', data)
-        self.update_graphics_side(side+'_passenger', data)
+        #self.update_graphics_side(side+'_passenger', data)
 
         return
         '''
@@ -389,10 +396,10 @@ class Application:
             #Front Handler
             self.update_graphics_rear_front('front', msg)
             #self.update_graphics_rear_front('rear', msg)
-        except:
+        except Exception:
             # just on general principles, although we don't
             # expect this branch to be taken in this case
-            print('error')
+            traceback.print_exc()
             pass
 
     def run_main_loop(self):

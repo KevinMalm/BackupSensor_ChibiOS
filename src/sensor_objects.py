@@ -2,6 +2,7 @@ import smbus
 from src.VL53L0X_api import VL53L0X_Sensor, MUX
 from gpiozero import LED
 
+BASE_ADDRESS = 0x29
 
 class SENSOR_POINT:
     sensor: None
@@ -11,30 +12,28 @@ class SENSOR_POINT:
     def __init__(self, _mux: DUMMY_MUX, set_address, bus, base_address = 0x20, _label = 'N/A'):
         self.mux = _mux
         self.label = _label
-        self.side = VL53L0X_Sensor(bus, sensor_id = address_offset, mux = mux, updated_address = (base_address + address_offset))
-        print('Data Init on Sensor: ' + self.label)
+        self.side = VL53L0X_Sensor(bus, sensor_id = address_offset, updated_address = (base_address + address_offset))
 
     def start_sensors(self):
-        print('Starting Sensor: ' + self.label)
+        self.sensor.start()
     def stop_sensors(self):
-        print('Stopping Sensor: ' + self.label)
+        self.sensor.stop()
     def get_distance(self):
-        self.last_read = None
+        self.last_read = self.sensor.getDistance()
 
 class SENSOR_QUADRANT:
     side: VL53L0X_Sensor
     center: VL53L0X_Sensor
     mux: MUX
-    sleep_ms = 0.02
-    sleep_factor = 1
     label = 'N/A'
 
     def __init__(self, mux: MUX, address_offset, bus, base_address = 0x20, _label = 'N/A'):
         self.label = _label
         self.mux = mux
-
-        self.side = VL53L0X_Sensor(bus, sensor_id = address_offset, mux = mux, updated_address = (base_address + address_offset))
-        self.center = VL53L0X_Sensor(bus, sensor_id = address_offset, mux = mux, updated_address = (base_address + address_offset + 1))
+        self.mux.set_MUX(address_offset)
+        self.side = VL53L0X_Sensor(bus, sensor_id = address_offset, updated_address = (base_address + address_offset))
+        self.mux.set_MUX(address_offset)
+        self.center = VL53L0X_Sensor(bus, sensor_id = (address_offset + 1), updated_address = (base_address + address_offset + 1))
 
         #self.side.DataInit()
         #self.center.DataInit()
@@ -74,15 +73,15 @@ class SENSOR_SYSTEM:
         #self.i2c_bus_1 = smbus.SMBus(1)
         #print('Opening Bus 1: ' + smbus.open(self.i2c_bus_1))
 
-        _front_mux = MUX([20, 21])
+        _front_mux = MUX([19, 20, 21])
         #_rear_mux = MUX([GPIO_PIN(15), GPIO_PIN(16), ])
-
-        self._system['front_driver'] = SENSOR_QUADRANT(_front_mux, 0x0, self.i2c_bus_0)
-        #self._system['front_point'] = DUMMY_SENSOR_POINT(_front_mux, 0x10, self.i2c_bus_0, _label= 'front_point')
-        #self._system['front_passenger'] = SENSOR_QUADRANT(_front_mux, 0x2, self.i2c_bus_0)
-        #self._system['rear_driver'] = SENSOR_QUADRANT(_rear_mux, 0x4, self.i2c_bus_1)
-        #self._system['rear_point'] = DUMMY_SENSOR_POINT(_rear_mux, 0x20, self.i2c_bus_0, _label= 'rear_point')
-        #self._system['rear_passenger'] = SENSOR_QUADRANT(_rear_mux, 0x6, self.i2c_bus_1)
+        _front_mux.set_MUX(0)
+        self._system['front_driver'] = SENSOR_QUADRANT(_front_mux, address_offset = 0x1, bus = self.i2c_bus_0, base_address= BASE_ADDRESS)
+        self._system['front_point'] = DUMMY_SENSOR_POINT(_front_mux,address_offset = 0x3, bus = self.i2c_bus_0, _label= 'front_point', base_address= BASE_ADDRESS)
+        #self._system['front_passenger'] = SENSOR_QUADRANT(_front_mux, address_offset = 0x4, bus = self.i2c_bus_0, base_address= BASE_ADDRESS)
+        #self._system['rear_driver'] = SENSOR_QUADRANT(_rear_mux, address_offset = 0x6, bus = self.i2c_bus_0, base_address= BASE_ADDRESS)
+        #self._system['rear_point'] = DUMMY_SENSOR_POINT(_rear_mux, address_offset = 0x8, bus = self.i2c_bus_0, _label= 'rear_point', base_address= BASE_ADDRESS)
+        #self._system['rear_passenger'] = SENSOR_QUADRANT(_rear_mux,address_offset = 0x9, bus = self.i2c_bus_0, base_address= BASE_ADDRESS)
 
     def start_sensors(self):
         self._system['front_driver'].start_sensors()
@@ -108,7 +107,7 @@ class SENSOR_SYSTEM:
 
     def unpack(self):
         self._system['front_driver'].get_distance()
-        #self._system['front_point'].get_distance()
+        self._system['front_point'].get_distance()
         #self._system['front_passenger'].get_distance()
         #self._system['rear_driver'].get_distance()
         #self._system['rear_point'].get_distance()
@@ -116,10 +115,10 @@ class SENSOR_SYSTEM:
         return {
             'front_driver': self._system['front_driver'].last_read,
             'front_point':self._system['front_point'].last_read,
-            'front_passenger':self._system['front_passenger'].last_read,
+            'front_passenger':None,#self._system['front_passenger'].last_read,
 
-            'rear_driver':self._system['rear_driver'].last_read,
-            'rear_point':self._system['rear_point'].last_read,
-            'rear_passenger':self._system['rear_passenger'].last_read
+            'rear_driver':None,#self._system['rear_driver'].last_read,
+            'rear_point':None,#self._system['rear_point'].last_read,
+            'rear_passenger':None#self._system['rear_passenger'].last_read
         }
 

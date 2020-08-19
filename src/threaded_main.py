@@ -1,5 +1,6 @@
 import time
 import threading
+import tkinter
 from graphical_interface import Application
 from dummy_sensor_objects import DUMMY_SENSOR_SYSTEM
 
@@ -33,8 +34,8 @@ class ThreadedClient:
         # Force Application to Exit 
         self.running = 0
 
-
-data_structure = DUMMY_SENSOR_SYSTEM()
+data_structure = SENSOR_SYSTEM()
+data_structure.start_sensors()
 app = Application(data_structure, None)
 
 client = ThreadedClient(app, data_structure)
